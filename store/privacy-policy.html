@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Privacy Policy — Fill-A-Form AI</title>
+<style>
+  body{max-width:760px;margin:40px auto;padding:0 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7;color:#1a1a2e}
+  h1{color:#4f46e5}h2{margin-top:2em;border-bottom:1px solid #e9ecef;padding-bottom:.4em}
+  a{color:#4f46e5}code{background:#f1f3f5;padding:2px 6px;border-radius:4px;font-size:.9em}
+</style>
+</head>
+<body>
+<h1>Privacy Policy</h1>
+<p><strong>Last updated:</strong> July 2026</p>
+<p>Fill-A-Form AI ("we", "us") is a Chrome extension that helps you autofill web forms using AI. This policy explains what data we collect, how we use it, and your rights.</p>
+
+<h2>1. Data We Collect</h2>
+<h3>Profile Data (stored locally)</h3>
+<p>Personal information you enter into the extension (name, address, email, etc.) is encrypted with AES-256-GCM and stored exclusively in <code>chrome.storage.local</code> on your device. The encryption key is generated locally and never transmitted.</p>
+
+<h3>Fill History (stored locally)</h3>
+<p>We record the URL, page title, number of fields filled, and which profile was used for each autofill. This data is stored locally and only synced to our servers if you explicitly enable backend sync.</p>
+
+<h3>API Calls</h3>
+<p>When you trigger an autofill, the following data is sent to the <strong>Anthropic API</strong> (Claude) over HTTPS:</p>
+<ul>
+  <li>The form field labels and types on the current page</li>
+  <li>Your profile data (in plain text, over encrypted HTTPS)</li>
+  <li>The page title and hostname</li>
+</ul>
+<p>This data is used solely to generate field-to-value suggestions. Anthropic's data handling is governed by <a href="https://www.anthropic.com/privacy">Anthropic's Privacy Policy</a>.</p>
+
+<h2>2. Backend Sync (Optional)</h2>
+<p>If you provide a backend URL and token in Settings, your profiles and fill history will be synced to that server. We do not operate a mandatory backend — any server you configure is under your control. If you use our hosted backend (<code>api.fill-a-form.ai</code>), data is transmitted over HTTPS and stored with encryption at rest.</p>
+
+<h2>3. Data We Do Not Collect</h2>
+<ul>
+  <li>We do not collect analytics or telemetry</li>
+  <li>We do not sell or share your data with third parties</li>
+  <li>We do not use cookies or tracking pixels</li>
+  <li>We do not read form values you have already entered</li>
+</ul>
+
+<h2>4. Your Rights</h2>
+<p>You can delete all locally stored data at any time by clicking <em>Settings → Clear All Data</em> in the extension popup, or by removing the extension (which automatically clears <code>chrome.storage.local</code>).</p>
+<p>For data stored on our hosted backend, email <a href="mailto:privacy@fill-a-form.ai">privacy@fill-a-form.ai</a> to request deletion.</p>
+
+<h2>5. GDPR</h2>
+<p>If you are in the European Economic Area, you have rights including access, rectification, erasure, portability, and objection. Contact us at the email above to exercise these rights. Our legal basis for processing is your explicit consent (you choose to save your profile and trigger autofill).</p>
+
+<h2>6. Children</h2>
+<p>This extension is not intended for users under 13. We do not knowingly collect data from children.</p>
+
+<h2>7. Changes</h2>
+<p>We may update this policy. We will notify users via the Chrome Web Store update notes for material changes.</p>
+
+<h2>8. Contact</h2>
+<p>Questions? Email <a href="mailto:privacy@fill-a-form.ai">privacy@fill-a-form.ai</a></p>
+</body>
+</html>
