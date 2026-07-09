@@ -1,110 +1,132 @@
 (() => {
-  let fillButton = null;
   let isProcessing = false;
   let quickPasteOverlay = null;
+  let fillButton = null;
 
-  // ===================== FIELD DETECTION =====================
+  // ---- cached field scan (invalidated on DOM mutation) ----
+  let cachedFields = null;
+  let mutationTimer = null;
 
-  function getFormFields() {
-    const sel = 'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]), textarea, select';
-    return Array.from(document.querySelectorAll(sel))
+  const observer = new MutationObserver(() => {
+    cachedFields = null;
+    clearTimeout(mutationTimer);
+    mutationTimer = setTimeout(maybeShowButton, 600);
+  });
+  observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
+
+  const FIELD_SEL = 'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),textarea,select';
+
+  function getFields() {
+    if (cachedFields) return cachedFields;
+    cachedFields = Array.from(document.querySelectorAll(FIELD_SEL))
       .filter(el => el.offsetParent !== null)
       .map((el, i) => ({
-        id: el.id || el.name || `field_${i}`,
+        id:          el.id || el.name || `field_${i}`,
         element_index: i,
-        label: findLabel(el),
-        type: el.type || el.tagName.toLowerCase(),
-        name: el.name || '',
+        label:       findLabel(el),
+        type:        el.type || el.tagName.toLowerCase(),
+        name:        el.name || '',
         placeholder: el.placeholder || '',
         autocomplete: el.autocomplete || '',
       }))
       .filter(f => f.label || f.name || f.placeholder);
+    return cachedFields;
   }
 
   function findLabel(el) {
     if (el.id) {
-      const lbl = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
-      if (lbl) return lbl.innerText.trim();
+      const l = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+      if (l) return l.innerText.trim();
     }
-    const parent = el.closest('label');
-    if (parent) return parent.innerText.replace(el.value, '').trim();
-    if (el.getAttribute('aria-label')) return el.getAttribute('aria-label');
+    const pl = el.closest('label');
+    if (pl) return pl.innerText.replace(el.value, '').trim();
+    const aria = el.getAttribute('aria-label') || el.getAttribute('aria-labelledby');
+    if (aria) {
+      if (el.getAttribute('aria-labelledby')) {
+        const ref = document.getElementById(aria);
+        if (ref) return ref.innerText.trim();
+      }
+      return aria;
+    }
     const prev = el.previousElementSibling;
     if (prev && ['LABEL','SPAN','P','DIV'].includes(prev.tagName)) return prev.innerText.trim();
     return el.placeholder || el.name || '';
   }
 
-  // ===================== INJECTION =====================
+  // ---- value injection ----
 
   function injectValues(suggestions) {
-    const sel = 'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]), textarea, select';
-    const elements = Array.from(document.querySelectorAll(sel)).filter(el => el.offsetParent !== null);
+    const elements = Array.from(document.querySelectorAll(FIELD_SEL)).filter(el => el.offsetParent !== null);
     let filled = 0;
     elements.forEach((el, i) => {
       const id = el.id || el.name || `field_${i}`;
-      if (suggestions[id] !== undefined) { setNativeValue(el, suggestions[id]); highlightField(el); filled++; }
+      if (suggestions[id] !== undefined) { setNative(el, suggestions[id]); highlight(el); filled++; }
     });
     return filled;
   }
 
-  function setNativeValue(el, value) {
-    const proto = el.tagName === 'SELECT' ? HTMLSelectElement.prototype
-      : el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-    const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+  function setNative(el, value) {
+    const proto = { SELECT: HTMLSelectElement, TEXTAREA: HTMLTextAreaElement }[el.tagName] || HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(proto.prototype, 'value')?.set;
     if (setter) setter.call(el, value); else el.value = value;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('input',  { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  function highlightField(el) {
-    el.style.transition = 'background-color 0.4s ease';
-    el.style.backgroundColor = '#d4edda';
+  function highlight(el) {
+    el.style.transition = 'background-color .3s';
+    el.style.backgroundColor = '#d1fae5';
     setTimeout(() => { el.style.backgroundColor = ''; }, 2000);
   }
 
-  // ===================== NOTIFICATIONS =====================
+  // ---- notifications ----
 
-  function showNotification(message, type = 'success') {
-    const existing = document.getElementById('faf-notification');
-    if (existing) existing.remove();
-    const el = document.createElement('div');
-    el.id = 'faf-notification';
-    el.textContent = message;
-    const colors = { success: '#198754', error: '#dc3545', info: '#4f46e5' };
-    el.style.cssText = `position:fixed;top:20px;right:20px;z-index:2147483647;padding:12px 18px;border-radius:8px;font-size:14px;font-family:-apple-system,sans-serif;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.15);background:${colors[type]||colors.success};color:white;max-width:320px;`;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3500);
+  function notify(msg, type = 'success') {
+    document.getElementById('faf-notif')?.remove();
+    const n = document.createElement('div');
+    n.id = 'faf-notif';
+    const colors = { success:'#059669', error:'#dc2626', info:'#4f46e5' };
+    n.style.cssText = `position:fixed;top:18px;right:18px;z-index:2147483647;padding:11px 16px;border-radius:10px;font-size:13px;font-family:-apple-system,sans-serif;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.18);background:${colors[type]||colors.success};color:#fff;max-width:300px;animation:faf-slide .2s ease`;
+    n.textContent = msg;
+    // inject keyframe once
+    if (!document.getElementById('faf-kf')) {
+      const s = document.createElement('style'); s.id='faf-kf';
+      s.textContent='@keyframes faf-slide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}';
+      document.head.appendChild(s);
+    }
+    document.body.appendChild(n);
+    setTimeout(() => n.remove(), 3200);
   }
 
-  // ===================== AUTOFILL =====================
+  // ---- autofill ----
 
   async function triggerAutofill(profileId) {
     if (isProcessing) return;
     isProcessing = true;
-    const fields = getFormFields();
-    if (!fields.length) { showNotification('No fillable fields found.', 'error'); isProcessing = false; return; }
-    showNotification('Analyzing form fields...', 'info');
+    const fields = getFields();
+    if (!fields.length) { notify('No fillable fields found.', 'error'); isProcessing = false; return; }
+    notify('Filling form…', 'info');
     try {
       const res = await chrome.runtime.sendMessage({
         type: 'AUTOFILL_REQUEST', fields,
-        pageContext: document.title + ' ' + window.location.hostname,
-        url: window.location.href,
-        pageTitle: document.title,
+        pageContext: `${document.title} ${location.hostname}`,
+        url: location.href, pageTitle: document.title,
         profileId: profileId || null,
       });
       if (res.error) {
-        const msgs = { NO_PROFILE: 'Set up a profile first.', NO_API_KEY: 'Add your API key in settings.', LIMIT_REACHED: 'Free limit reached. Upgrade to premium.' };
-        showNotification(msgs[res.error] || res.error, 'error');
+        const msgs = { NO_PROFILE:'Set up a profile first.', NO_API_KEY:'Add your Claude API key in Settings.', LIMIT_REACHED:'Free limit reached. Upgrade to premium.' };
+        notify(msgs[res.error] || res.error, 'error');
         return;
       }
       const filled = injectValues(res.suggestions);
-      showNotification(`Filled ${filled} field${filled !== 1 ? 's' : ''}!`);
+      const via = res.method === 'template' ? ' (template)' : res.method === 'heuristic' ? ' (smart match)' : '';
+      notify(`Filled ${filled} field${filled!==1?'s':''}${via}!`);
       closeQuickPaste();
-    } catch { showNotification('Something went wrong.', 'error'); }
+    } catch { notify('Something went wrong. Please try again.', 'error'); }
     finally { isProcessing = false; }
   }
 
-  // ===================== QUICK PASTE OVERLAY =====================
+  // ---- quick paste overlay ----
 
   async function showQuickPaste() {
     if (quickPasteOverlay) { closeQuickPaste(); return; }
@@ -114,125 +136,104 @@
       chrome.runtime.sendMessage({ type: 'GET_ACTIVE_PROFILE' }),
     ]);
 
-    const fieldCount = getFormFields().length;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'faf-quick-paste';
-    overlay.innerHTML = `
-      <div id="faf-qp-panel">
-        <div id="faf-qp-header">
-          <span id="faf-qp-logo">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Fill-A-Form AI
-          </span>
-          <button id="faf-qp-close">✕</button>
+    const fieldCount = getFields().length;
+    const wrap = document.createElement('div');
+    wrap.id = 'faf-qp';
+    wrap.innerHTML = `<div id="faf-qp-panel">
+      <div id="faf-qp-hd">
+        <span id="faf-qp-logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Fill-A-Form AI</span>
+        <button id="faf-qp-x">✕</button>
+      </div>
+      <div id="faf-qp-bd">
+        <p id="faf-qp-fc">${fieldCount > 0 ? `${fieldCount} field${fieldCount!==1?'s':''} detected` : 'No fillable fields on this page'}</p>
+        <div id="faf-qp-pl">${(profiles||[]).map(p=>`
+          <button class="faf-qp-p${p.id===activeId?' faf-active':''}" data-id="${p.id}" data-pin="${p.hasPin?'1':'0'}">
+            <span class="faf-qp-av">${escHtml(p.name[0]||'?')}</span>
+            <span class="faf-qp-pn">${escHtml(p.name)}</span>
+            ${p.hasPin?'<span class="faf-qp-lk">🔒</span>':''}
+            ${p.id===activeId?'<span class="faf-qp-ck">✓</span>':''}
+          </button>`).join('')}
         </div>
-        <div id="faf-qp-body">
-          ${fieldCount === 0
-            ? '<p id="faf-qp-no-fields">No fillable fields detected on this page.</p>'
-            : `<p id="faf-qp-field-count">${fieldCount} field${fieldCount !== 1 ? 's' : ''} detected</p>`}
-          <div id="faf-qp-profiles">
-            ${(profiles || []).map(p => `
-              <button class="faf-qp-profile${p.id === activeId ? ' active' : ''}" data-id="${p.id}" data-pin="${p.hasPin ? '1' : '0'}">
-                <span class="faf-qp-pname">${escHtml(p.name)}</span>
-                ${p.hasPin ? '<span class="faf-qp-lock">🔒</span>' : ''}
-                ${p.id === activeId ? '<span class="faf-qp-check">✓</span>' : ''}
-              </button>`).join('')}
-          </div>
-          ${fieldCount > 0 ? `<button id="faf-qp-fill-btn">Fill with AI</button>` : ''}
-        </div>
-        <div id="faf-pin-prompt" style="display:none">
-          <p>Enter PIN to use this profile</p>
-          <input id="faf-pin-input" type="password" placeholder="PIN" maxlength="8" />
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="faf-pin-cancel">Cancel</button>
-            <button id="faf-pin-confirm">Confirm</button>
-          </div>
+        ${fieldCount>0?'<button id="faf-qp-fill">Fill with AI</button>':''}
+      </div>
+      <div id="faf-pin-wrap" style="display:none">
+        <p>Enter PIN for this profile</p>
+        <input id="faf-pin-in" type="password" placeholder="PIN" maxlength="8"/>
+        <div class="faf-pin-btns">
+          <button id="faf-pin-cancel">Cancel</button>
+          <button id="faf-pin-ok">Confirm</button>
         </div>
       </div>
-    `;
+    </div>`;
+    document.body.appendChild(wrap);
+    quickPasteOverlay = wrap;
 
-    document.body.appendChild(overlay);
-    quickPasteOverlay = overlay;
+    let selectedId = activeId;
+    let pendingPin = null;
 
-    let selectedProfileId = activeId;
-    let pendingPinProfileId = null;
+    wrap.addEventListener('click', e => { if (e.target === wrap) closeQuickPaste(); });
+    document.getElementById('faf-qp-x').addEventListener('click', closeQuickPaste);
 
-    overlay.addEventListener('click', e => { if (e.target === overlay) closeQuickPaste(); });
-    document.getElementById('faf-qp-close').addEventListener('click', closeQuickPaste);
-
-    // profile selection
-    overlay.querySelectorAll('.faf-qp-profile').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        const hasPin = btn.dataset.pin === '1';
-        if (hasPin && id !== activeId) {
-          pendingPinProfileId = id;
-          document.getElementById('faf-pin-prompt').style.display = 'block';
-          document.getElementById('faf-pin-input').focus();
-        } else {
-          selectProfile(id);
-        }
-      });
-    });
+    wrap.querySelectorAll('.faf-qp-p').forEach(btn => btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (btn.dataset.pin === '1' && id !== activeId) {
+        pendingPin = id;
+        document.getElementById('faf-pin-wrap').style.display = 'block';
+        document.getElementById('faf-pin-in').focus();
+      } else { selectProfile(id); }
+    }));
 
     function selectProfile(id) {
-      selectedProfileId = id;
-      overlay.querySelectorAll('.faf-qp-profile').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+      selectedId = id;
+      wrap.querySelectorAll('.faf-qp-p').forEach(b => b.classList.toggle('faf-active', b.dataset.id === id));
     }
 
-    // PIN prompt
     document.getElementById('faf-pin-cancel')?.addEventListener('click', () => {
-      document.getElementById('faf-pin-prompt').style.display = 'none';
-      pendingPinProfileId = null;
+      document.getElementById('faf-pin-wrap').style.display = 'none'; pendingPin = null;
     });
-    document.getElementById('faf-pin-confirm')?.addEventListener('click', async () => {
-      const pin = document.getElementById('faf-pin-input').value;
-      const { valid } = await chrome.runtime.sendMessage({ type: 'VERIFY_PIN', profileId: pendingPinProfileId, pin });
-      if (valid) { selectProfile(pendingPinProfileId); document.getElementById('faf-pin-prompt').style.display = 'none'; }
-      else { document.getElementById('faf-pin-input').style.borderColor = '#dc3545'; }
+    document.getElementById('faf-pin-ok')?.addEventListener('click', async () => {
+      const pin = document.getElementById('faf-pin-in').value;
+      const { valid } = await chrome.runtime.sendMessage({ type: 'VERIFY_PIN', profileId: pendingPin, pin });
+      if (valid) { selectProfile(pendingPin); document.getElementById('faf-pin-wrap').style.display = 'none'; }
+      else document.getElementById('faf-pin-in').style.borderColor = '#dc2626';
     });
 
-    // fill button
-    document.getElementById('faf-qp-fill-btn')?.addEventListener('click', () => triggerAutofill(selectedProfileId));
+    document.getElementById('faf-qp-fill')?.addEventListener('click', () => triggerAutofill(selectedId));
 
-    // escape key
-    overlay._keyHandler = e => { if (e.key === 'Escape') closeQuickPaste(); };
-    document.addEventListener('keydown', overlay._keyHandler);
+    wrap._kh = e => { if (e.key === 'Escape') closeQuickPaste(); };
+    document.addEventListener('keydown', wrap._kh);
   }
 
   function closeQuickPaste() {
     if (!quickPasteOverlay) return;
-    document.removeEventListener('keydown', quickPasteOverlay._keyHandler);
+    document.removeEventListener('keydown', quickPasteOverlay._kh);
     quickPasteOverlay.remove();
     quickPasteOverlay = null;
   }
 
-  function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+  function escHtml(s) { return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-  // ===================== FLOATING BUTTON =====================
+  // ---- floating button ----
 
-  function createFillButton() {
-    if (fillButton) return;
-    if (getFormFields().length === 0) return;
+  function maybeShowButton() {
+    if (fillButton) { if (!getFields().length) { fillButton.remove(); fillButton = null; } return; }
+    if (!getFields().length) return;
     fillButton = document.createElement('button');
-    fillButton.id = 'fill-a-form-btn';
-    fillButton.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Fill with AI</span>`;
+    fillButton.id = 'faf-btn';
+    fillButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Fill with AI`;
     fillButton.addEventListener('click', () => triggerAutofill(null));
     document.body.appendChild(fillButton);
   }
 
-  // ===================== MESSAGE LISTENER =====================
+  // ---- message listener ----
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message.type === 'TRIGGER_AUTOFILL') { triggerAutofill(message.profileId || null); sendResponse({}); }
-    if (message.type === 'GET_FIELD_COUNT') sendResponse({ count: getFormFields().length });
-    if (message.type === 'SHOW_QUICK_PASTE') { showQuickPaste(); sendResponse({}); }
+  chrome.runtime.onMessage.addListener((msg, _s, reply) => {
+    if (msg.type === 'TRIGGER_AUTOFILL') { triggerAutofill(msg.profileId || null); reply({}); }
+    if (msg.type === 'GET_FIELD_COUNT')  reply({ count: getFields().length });
+    if (msg.type === 'SHOW_QUICK_PASTE') { showQuickPaste(); reply({}); }
     return true;
   });
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', createFillButton);
-  else createFillButton();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', maybeShowButton);
+  else maybeShowButton();
 })();

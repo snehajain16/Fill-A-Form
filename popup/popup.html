@@ -8,243 +8,304 @@
 <body>
 <div id="app">
 
+  <!-- HEADER -->
   <header>
     <div class="logo">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <div class="logo-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </div>
       Fill-A-Form AI
     </div>
-    <div id="active-profile-badge" class="badge hidden"></div>
+    <div id="active-badge" class="active-badge hidden"></div>
   </header>
 
-  <!-- ===== HOME ===== -->
+  <!-- HOME -->
   <div id="home-view" class="view">
-    <div class="stat-row">
-      <div class="stat"><span class="stat-val" id="s-fills">–</span><span class="stat-label">Fills</span></div>
-      <div class="stat"><span class="stat-val" id="s-profiles">–</span><span class="stat-label">Profiles</span></div>
-      <div class="stat"><span class="stat-val" id="s-templates">–</span><span class="stat-label">Templates</span></div>
-      <div class="stat"><span class="stat-val" id="s-history">–</span><span class="stat-label">History</span></div>
+    <div class="hero">
+      <button id="autofill-btn" class="fill-btn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Autofill This Page
+      </button>
+      <div id="fields-detected" class="field-count"></div>
     </div>
-    <div class="usage-row">
-      <div class="usage-bar"><div id="usage-fill"></div></div>
-      <span id="usage-label"></span>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span id="s-fills" class="stat-n">–</span>
+        <span class="stat-l">Fills</span>
+      </div>
+      <div class="stat-card">
+        <span id="s-profiles" class="stat-n">–</span>
+        <span class="stat-l">Profiles</span>
+      </div>
+      <div class="stat-card">
+        <span id="s-templates" class="stat-n">–</span>
+        <span class="stat-l">Templates</span>
+      </div>
+      <div class="stat-card">
+        <span id="s-history" class="stat-n">–</span>
+        <span class="stat-l">History</span>
+      </div>
     </div>
-    <button id="autofill-btn" class="primary-btn" disabled>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-      Autofill This Page
-    </button>
-    <div id="fields-detected" class="hint"></div>
-    <div id="shortcut-hint" class="hint">Press <kbd>Ctrl+Shift+F</kbd> on any page for quick fill</div>
-    <div id="home-alerts"></div>
+
+    <div class="usage-track">
+      <div class="usage-bar-bg"><div id="usage-bar" class="usage-bar-fill"></div></div>
+      <span id="usage-label" class="usage-label"></span>
+    </div>
+
+    <div id="mode-pill"></div>
+    <div id="shortcut-hint" class="shortcut-hint"></div>
+    <div id="home-alerts" class="alerts"></div>
   </div>
 
-  <!-- ===== PROFILES ===== -->
+  <!-- PROFILES -->
   <div id="profiles-view" class="view hidden">
-
-    <!-- Board manager -->
-    <div id="boards-section">
-      <div class="view-header">
-        <h2>Boards</h2>
-        <button id="new-board-btn" class="ghost-btn sm">+ Board</button>
+    <div id="profile-list-panel">
+      <div class="boards-strip" id="boards-strip">
+        <button id="all-filter" class="chip chip-active">All</button>
+        <div id="board-chips"></div>
+        <button id="new-board-btn" class="chip chip-add">+ Board</button>
       </div>
-      <div id="board-list"></div>
-      <div id="board-editor" class="inline-editor hidden">
-        <input id="board-name-input" type="text" placeholder="Board name" />
-        <input id="board-color-input" type="color" value="#4f46e5" title="Board color" />
-        <button id="board-save-btn" class="ghost-btn sm">Save</button>
-        <button id="board-cancel-btn" class="ghost-btn sm">Cancel</button>
+      <div id="board-inline-editor" class="inline-editor hidden">
+        <input id="board-name-in" type="text" placeholder="Board name" class="small-input"/>
+        <input id="board-color-in" type="color" value="#4f46e5" class="color-pick"/>
+        <button id="board-save-btn" class="mini-btn primary">Save</button>
+        <button id="board-cancel-btn" class="mini-btn">×</button>
       </div>
+      <div class="list-header">
+        <span class="list-title">Profiles</span>
+        <button id="new-profile-btn" class="add-btn">+ New</button>
+      </div>
+      <div id="profile-list" class="card-list"></div>
     </div>
 
-    <div class="section-divider"></div>
-
-    <!-- Profile list -->
-    <div id="profile-section">
-      <div class="view-header">
-        <h2>Profiles</h2>
-        <button id="new-profile-btn" class="ghost-btn sm">+ Profile</button>
-      </div>
-      <div id="board-filter-row"></div>
-      <div id="profile-list"></div>
-    </div>
-
-    <!-- Profile editor (slides in) -->
-    <div id="profile-editor" class="panel-overlay hidden">
-      <div class="panel-header">
-        <button id="back-to-profiles" class="icon-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    <!-- Profile editor panel -->
+    <div id="profile-editor" class="side-panel hidden">
+      <div class="panel-nav">
+        <button id="back-profiles" class="back-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <h3 id="editor-title">New Profile</h3>
+        <span id="profile-panel-title" class="panel-title">New Profile</span>
       </div>
-      <form id="profile-form" class="scrollable">
-        <input type="hidden" id="edit-profile-id"/>
-        <div class="form-group"><label>Profile Name</label><input id="edit-profile-name" type="text" placeholder="Work, Personal, Travel…" required/></div>
-        <div class="form-group">
-          <label>Board</label>
-          <select id="edit-profile-board"><option value="">— No board —</option></select>
-        </div>
+      <div class="panel-body">
+        <form id="profile-form">
+          <input type="hidden" id="edit-id"/>
+          <div class="field-group"><label>Name</label><input id="edit-name" type="text" placeholder="Work, Personal, Travel…" required/></div>
+          <div class="field-group"><label>Board</label><select id="edit-board"><option value="">— No board —</option></select></div>
 
-        <div class="form-group pin-group">
-          <label>PIN Protection</label>
-          <div id="pin-status" class="pin-status"></div>
-          <div id="pin-set-row" class="hidden">
-            <input id="pin-input" type="password" maxlength="8" placeholder="4–8 digit PIN"/>
-            <button type="button" id="pin-save-btn" class="ghost-btn sm">Set PIN</button>
+          <div class="pin-section">
+            <div class="pin-row">
+              <span class="pin-label">PIN Lock</span>
+              <div id="pin-indicator" class="pin-ind off">Off</div>
+              <button type="button" id="pin-toggle" class="mini-btn">Set</button>
+            </div>
+            <div id="pin-input-row" class="pin-input-row hidden">
+              <input id="pin-val" type="password" maxlength="8" placeholder="4–8 digit PIN" class="small-input"/>
+              <button type="button" id="pin-confirm-btn" class="mini-btn primary">Save PIN</button>
+            </div>
           </div>
-          <button type="button" id="pin-toggle-btn" class="ghost-btn sm">Set PIN</button>
-        </div>
 
-        <div class="section-label">Personal</div>
-        <div class="form-group"><label>Full Name</label><input type="text" name="fullName" placeholder="John Doe"/></div>
-        <div class="form-row">
-          <div class="form-group"><label>First Name</label><input type="text" name="firstName" placeholder="John"/></div>
-          <div class="form-group"><label>Last Name</label><input type="text" name="lastName" placeholder="Doe"/></div>
-        </div>
-        <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="john@example.com"/></div>
-        <div class="form-group"><label>Phone</label><input type="tel" name="phone" placeholder="+1 555-000-0000"/></div>
-        <div class="form-group"><label>Date of Birth</label><input type="date" name="dob"/></div>
+          <div class="section-sep">Personal</div>
+          <div class="field-group"><label>Full Name</label><input type="text" name="fullName" placeholder="John Doe"/></div>
+          <div class="field-row">
+            <div class="field-group"><label>First Name</label><input type="text" name="firstName" placeholder="John"/></div>
+            <div class="field-group"><label>Last Name</label><input type="text" name="lastName" placeholder="Doe"/></div>
+          </div>
+          <div class="field-group"><label>Email</label><input type="email" name="email" placeholder="john@example.com"/></div>
+          <div class="field-group"><label>Phone</label><input type="tel" name="phone" placeholder="+1 555-000-0000"/></div>
+          <div class="field-group"><label>Date of Birth</label><input type="date" name="dob"/></div>
 
-        <div class="section-label">Address</div>
-        <div class="form-group"><label>Address Line 1</label><input type="text" name="address1" placeholder="123 Main St"/></div>
-        <div class="form-group"><label>Address Line 2</label><input type="text" name="address2" placeholder="Apt 4B"/></div>
-        <div class="form-row">
-          <div class="form-group"><label>City</label><input type="text" name="city" placeholder="New York"/></div>
-          <div class="form-group"><label>State</label><input type="text" name="state" placeholder="NY"/></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>ZIP</label><input type="text" name="zip" placeholder="10001"/></div>
-          <div class="form-group"><label>Country</label><input type="text" name="country" placeholder="United States"/></div>
-        </div>
+          <div class="section-sep">Address</div>
+          <div class="field-group"><label>Address Line 1</label><input type="text" name="address1" placeholder="123 Main St"/></div>
+          <div class="field-group"><label>Address Line 2</label><input type="text" name="address2" placeholder="Apt 4B"/></div>
+          <div class="field-row">
+            <div class="field-group"><label>City</label><input type="text" name="city" placeholder="New York"/></div>
+            <div class="field-group"><label>State</label><input type="text" name="state" placeholder="NY"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field-group"><label>ZIP</label><input type="text" name="zip" placeholder="10001"/></div>
+            <div class="field-group"><label>Country</label><input type="text" name="country" placeholder="United States"/></div>
+          </div>
 
-        <div class="section-label">Professional</div>
-        <div class="form-group"><label>Occupation</label><input type="text" name="occupation" placeholder="Software Engineer"/></div>
-        <div class="form-group"><label>Company</label><input type="text" name="company" placeholder="Acme Corp"/></div>
-        <div class="form-group"><label>LinkedIn</label><input type="url" name="linkedin" placeholder="https://linkedin.com/in/…"/></div>
+          <div class="section-sep">Professional</div>
+          <div class="field-group"><label>Occupation</label><input type="text" name="occupation" placeholder="Software Engineer"/></div>
+          <div class="field-group"><label>Company</label><input type="text" name="company" placeholder="Acme Corp"/></div>
+          <div class="field-group"><label>LinkedIn</label><input type="url" name="linkedin" placeholder="https://linkedin.com/in/…"/></div>
 
-        <div class="section-label">Identity</div>
-        <div class="form-group"><label>Passport / ID</label><input type="text" name="passportNumber" placeholder="A12345678"/></div>
-        <div class="form-group"><label>Nationality</label><input type="text" name="nationality" placeholder="American"/></div>
+          <div class="section-sep">Identity</div>
+          <div class="field-group"><label>Passport / ID</label><input type="text" name="passportNumber" placeholder="A12345678"/></div>
+          <div class="field-group"><label>Nationality</label><input type="text" name="nationality" placeholder="American"/></div>
 
-        <div class="section-label">Dynamic Fields <span class="hint-inline">Pulled live from a URL</span></div>
-        <div id="dynamic-fields-list"></div>
-        <button type="button" id="add-dynamic-field-btn" class="ghost-btn full">+ Add Dynamic Field</button>
+          <div class="section-sep">Dynamic Fields <span class="sec-hint">Live data from a URL</span></div>
+          <div id="dynamic-list"></div>
+          <button type="button" id="add-dynamic" class="outline-btn full">+ Add Dynamic Field</button>
 
-        <div class="btn-row">
-          <button type="button" id="delete-profile-btn" class="danger-btn hidden">Delete</button>
-          <button type="submit" class="primary-btn">Save Profile</button>
-        </div>
-      </form>
+          <div class="form-actions">
+            <button type="button" id="delete-profile" class="del-btn hidden">Delete</button>
+            <button type="submit" class="save-btn">Save Profile</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
-  <!-- ===== TEMPLATES ===== -->
+  <!-- TEMPLATES -->
   <div id="templates-view" class="view hidden">
-    <div class="view-header">
-      <h2>Templates</h2>
-      <button id="new-template-btn" class="ghost-btn sm">+ New</button>
-    </div>
-    <p class="hint" style="margin-bottom:4px">Templates match URLs and fill fields without an AI call — instant and free.</p>
-    <div id="template-list"></div>
-
-    <div id="template-editor" class="panel-overlay hidden">
-      <div class="panel-header">
-        <button id="back-to-templates" class="icon-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <h3 id="tpl-editor-title">New Template</h3>
+    <div id="template-list-panel">
+      <div class="list-header">
+        <div>
+          <span class="list-title">Templates</span>
+          <p class="list-sub">Fill known forms instantly — no AI call needed.</p>
+        </div>
+        <button id="new-template-btn" class="add-btn">+ New</button>
       </div>
-      <form id="template-form" class="scrollable">
-        <input type="hidden" id="tpl-id"/>
-        <div class="form-group"><label>Template Name</label><input id="tpl-name" type="text" placeholder="e.g. US Visa Form" required/></div>
-        <div class="form-group"><label>Description</label><input id="tpl-desc" type="text" placeholder="Optional"/></div>
-        <div class="form-group">
-          <label>URL Pattern <span class="hint-inline">supports * wildcards</span></label>
-          <input id="tpl-url-pattern" type="text" placeholder="e.g. *.uscis.gov or workday.com"/>
-        </div>
-        <div class="form-group">
-          <label>Default Profile</label>
-          <select id="tpl-profile-select"><option value="">— Any active profile —</option></select>
-        </div>
+      <div id="template-list" class="card-list"></div>
+    </div>
 
-        <div class="section-label">Field Mappings <span class="hint-inline">Label/name → value (use {{profileField}} variables)</span></div>
-        <div id="tpl-mappings-list"></div>
-        <button type="button" id="add-mapping-btn" class="ghost-btn full">+ Add Mapping</button>
+    <div id="template-editor" class="side-panel hidden">
+      <div class="panel-nav">
+        <button id="back-templates" class="back-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span id="tpl-panel-title" class="panel-title">New Template</span>
+      </div>
+      <div class="panel-body">
+        <form id="template-form">
+          <input type="hidden" id="tpl-id"/>
+          <div class="field-group"><label>Name</label><input id="tpl-name" type="text" placeholder="e.g. US Visa Form" required/></div>
+          <div class="field-group"><label>URL Pattern <span class="sec-hint">* wildcards supported</span></label><input id="tpl-pattern" type="text" placeholder="*.uscis.gov or workday.com"/></div>
+          <div class="field-group"><label>Default Profile</label><select id="tpl-profile"><option value="">— Any active profile —</option></select></div>
 
-        <div class="btn-row">
-          <button type="button" id="delete-template-btn" class="danger-btn hidden">Delete</button>
-          <button type="submit" class="primary-btn">Save Template</button>
-        </div>
-      </form>
+          <div class="section-sep">Field Mappings <span class="sec-hint">label/name → value or {{field}}</span></div>
+          <div id="mapping-list"></div>
+          <button type="button" id="add-mapping" class="outline-btn full">+ Add Mapping</button>
+
+          <div class="form-actions">
+            <button type="button" id="delete-template" class="del-btn hidden">Delete</button>
+            <button type="submit" class="save-btn">Save Template</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
-  <!-- ===== HISTORY ===== -->
+  <!-- HISTORY -->
   <div id="history-view" class="view hidden">
-    <div class="view-header">
-      <h2>Fill History</h2>
-      <button id="clear-history-btn" class="ghost-btn sm danger">Clear</button>
+    <div class="list-header">
+      <span class="list-title">Fill History</span>
+      <button id="clear-history" class="mini-btn danger">Clear all</button>
     </div>
-    <div id="history-list"></div>
+    <div id="history-list" class="card-list"></div>
     <div id="history-empty" class="empty-state hidden">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
-      <p>No fills yet. Use autofill on any form to start tracking.</p>
+      <div class="empty-icon">🕐</div>
+      <p>No fills recorded yet.</p>
+      <span>Autofill any form to start tracking.</span>
     </div>
   </div>
 
-  <!-- ===== SETTINGS ===== -->
+  <!-- SETTINGS -->
   <div id="settings-view" class="view hidden">
-    <h2>Settings</h2>
+    <span class="list-title">Settings</span>
     <form id="settings-form">
-      <div class="section-label">AI</div>
-      <div class="form-group">
-        <label>Claude API Key</label>
-        <input type="password" id="api-key-input" placeholder="sk-ant-…" autocomplete="off"/>
-        <small>Get yours at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></small>
+
+      <div class="settings-section">
+        <div class="settings-label">Fill Mode</div>
+        <div class="mode-cards" id="mode-cards">
+          <label class="mode-card">
+            <input type="radio" name="fillMode" value="heuristic"/>
+            <div class="mode-card-inner">
+              <span class="mode-icon">⚡</span>
+              <span class="mode-name">Smart Match</span>
+              <span class="mode-desc">No API key required. Rule-based field matching.</span>
+            </div>
+          </label>
+          <label class="mode-card">
+            <input type="radio" name="fillMode" value="hybrid"/>
+            <div class="mode-card-inner">
+              <span class="mode-icon">🔀</span>
+              <span class="mode-name">Hybrid</span>
+              <span class="mode-desc">Smart Match first, Claude AI fills the gaps.</span>
+            </div>
+          </label>
+          <label class="mode-card">
+            <input type="radio" name="fillMode" value="ai"/>
+            <div class="mode-card-inner">
+              <span class="mode-icon">🤖</span>
+              <span class="mode-name">AI Only</span>
+              <span class="mode-desc">Always uses Claude for maximum accuracy.</span>
+            </div>
+          </label>
+        </div>
       </div>
-      <div class="section-label">Backup & Restore</div>
-      <div class="backup-row">
-        <button type="button" id="export-btn" class="ghost-btn full">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export Backup (.faf)
-        </button>
-        <label id="import-label" class="ghost-btn full" style="cursor:pointer;text-align:center">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Import Backup
-          <input type="file" id="import-input" accept=".faf,.json" style="display:none"/>
-        </label>
+
+      <div id="api-key-section" class="settings-section hidden">
+        <div class="settings-label">Claude API Key</div>
+        <div class="field-group">
+          <input type="password" id="api-key-in" placeholder="sk-ant-…" autocomplete="off"/>
+          <small>Get yours at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></small>
+        </div>
       </div>
-      <div class="section-label">Backend Sync</div>
-      <div class="form-group"><label>Backend URL</label><input type="url" id="backend-url-input" placeholder="https://your-api.example.com"/></div>
-      <div class="form-group"><label>Backend Token</label><input type="password" id="backend-token-input" placeholder="Auth token" autocomplete="off"/></div>
-      <button type="button" id="sync-btn" class="ghost-btn full">Sync to Backend</button>
-      <div class="section-label">Behavior</div>
-      <div class="form-group toggle-group">
-        <label>Auto-fill on page load</label>
-        <label class="switch"><input type="checkbox" id="auto-fill-toggle"/><span class="slider"></span></label>
+
+      <div class="settings-section">
+        <div class="settings-label">Backup & Restore</div>
+        <div class="two-col">
+          <button type="button" id="export-btn" class="outline-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export .faf
+          </button>
+          <label class="outline-btn" style="cursor:pointer;text-align:center">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import .faf
+            <input type="file" id="import-in" accept=".faf,.json" style="display:none"/>
+          </label>
+        </div>
       </div>
-      <button type="submit" class="primary-btn" style="margin-top:14px">Save Settings</button>
+
+      <div class="settings-section">
+        <div class="settings-label">Backend Sync <span class="sec-hint optional">optional</span></div>
+        <div class="field-group"><label>URL</label><input type="url" id="backend-url" placeholder="https://your-api.example.com"/></div>
+        <div class="field-group"><label>Token</label><input type="password" id="backend-token" placeholder="Auth token" autocomplete="off"/></div>
+        <button type="button" id="sync-btn" class="outline-btn full">Sync now</button>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-label">Behavior</div>
+        <div class="toggle-row">
+          <span>Auto-fill on page load</span>
+          <label class="toggle"><input type="checkbox" id="auto-fill-toggle"/><span class="toggle-track"><span class="toggle-thumb"></span></span></label>
+        </div>
+      </div>
+
+      <button type="submit" class="save-btn full" style="margin-top:6px">Save Settings</button>
     </form>
   </div>
 
-  <nav>
-    <button class="nav-btn active" data-view="home-view">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home
+  <!-- NAV -->
+  <nav id="main-nav">
+    <button class="nav-item active" data-view="home-view">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span>Home</span>
     </button>
-    <button class="nav-btn" data-view="profiles-view">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Profiles
+    <button class="nav-item" data-view="profiles-view">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Profiles</span>
     </button>
-    <button class="nav-btn" data-view="templates-view">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Templates
+    <button class="nav-item" data-view="templates-view">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <span>Templates</span>
     </button>
-    <button class="nav-btn" data-view="history-view">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>History
+    <button class="nav-item" data-view="history-view">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+      <span>History</span>
     </button>
-    <button class="nav-btn" data-view="settings-view">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
+    <button class="nav-item" data-view="settings-view">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
     </button>
   </nav>
 
 </div>
-<div id="toast" class="toast hidden"></div>
+<div id="toast"></div>
 <script src="popup.js" type="module"></script>
 </body>
 </html>

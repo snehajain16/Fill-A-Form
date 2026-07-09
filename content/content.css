@@ -1,78 +1,103 @@
 /* ---- Floating fill button ---- */
-#fill-a-form-btn {
-  position: fixed; bottom: 24px; right: 24px; z-index: 2147483646;
-  display: flex; align-items: center; gap: 8px; padding: 10px 18px;
-  background: #4f46e5; color: white; border: none; border-radius: 50px;
-  font-size: 14px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  cursor: pointer; box-shadow: 0 4px 16px rgba(79,70,229,.4);
-  transition: transform .15s, box-shadow .15s, background .15s;
+#faf-btn {
+  position: fixed; bottom: 22px; right: 22px; z-index: 2147483646;
+  display: flex; align-items: center; gap: 8px; padding: 11px 20px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff; border: none; border-radius: 50px;
+  font-size: 13px; font-weight: 650; font-family: -apple-system, 'Segoe UI', sans-serif;
+  cursor: pointer; box-shadow: 0 4px 20px rgba(79,70,229,.45);
+  transition: transform .15s, box-shadow .15s, opacity .15s;
+  letter-spacing: .01em;
 }
-#fill-a-form-btn:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,.5); }
-#fill-a-form-btn:active { transform: translateY(0); }
+#faf-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(79,70,229,.55); }
+#faf-btn:active { transform: translateY(0); }
 
 /* ---- Quick Paste Overlay ---- */
-#faf-quick-paste {
+#faf-qp {
   position: fixed; inset: 0; z-index: 2147483645;
-  background: rgba(0,0,0,.45); display: flex; align-items: flex-start; justify-content: flex-end;
-  padding: 60px 24px 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  animation: faf-fadein .15s ease;
+  background: rgba(15,15,25,.55); backdrop-filter: blur(4px);
+  display: flex; align-items: flex-start; justify-content: flex-end;
+  padding: 56px 20px 0 0;
+  animation: faf-bg .18s ease;
 }
-@keyframes faf-fadein { from { opacity:0 } to { opacity:1 } }
+@keyframes faf-bg { from { opacity:0 } to { opacity:1 } }
 
 #faf-qp-panel {
-  background: #fff; border-radius: 14px; width: 300px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.22); overflow: hidden;
-  animation: faf-slidein .15s ease;
+  background: #fff; border-radius: 16px; width: 292px;
+  box-shadow: 0 12px 48px rgba(0,0,0,.22), 0 2px 8px rgba(0,0,0,.08);
+  overflow: hidden; animation: faf-drop .18s cubic-bezier(.34,1.56,.64,1);
 }
-@keyframes faf-slidein { from { transform: translateY(-8px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+@keyframes faf-drop { from { opacity:0; transform:translateY(-10px) scale(.97) } to { opacity:1; transform:none } }
 
 @media (prefers-color-scheme: dark) {
-  #faf-qp-panel { background: #1e1e2e; color: #e2e2f0; }
-  .faf-qp-profile { background: #2a2a3e !important; border-color: #3a3a5a !important; color: #e2e2f0 !important; }
-  .faf-qp-profile:hover { border-color: #4f46e5 !important; }
-  .faf-qp-profile.active { background: rgba(79,70,229,.15) !important; border-color: #4f46e5 !important; }
-  #faf-pin-input { background: #2a2a3e !important; border-color: #3a3a5a !important; color: #e2e2f0 !important; }
-  #faf-qp-field-count, #faf-qp-no-fields { color: #9999bb !important; }
+  #faf-qp-panel { background: #1e1e32; }
+  #faf-qp-hd { border-color: #2e2e4a !important; }
+  #faf-qp-fc { color: #7070a0 !important; }
+  .faf-qp-p { background: #28284a !important; border-color: #38385a !important; color: #d0d0f0 !important; }
+  .faf-qp-p:hover { border-color: #6060cc !important; }
+  .faf-qp-p.faf-active { background: rgba(100,90,255,.18) !important; border-color: #6060cc !important; }
+  #faf-pin-wrap { border-color: #2e2e4a !important; }
+  #faf-pin-in { background: #28284a !important; border-color: #38385a !important; color: #d0d0f0 !important; }
 }
 
-#faf-qp-header {
+#faf-qp-hd {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px 12px; border-bottom: 1px solid #e9ecef;
+  padding: 13px 15px 11px; border-bottom: 1px solid #ebebf5;
 }
-#faf-qp-logo { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; color: #4f46e5; }
-#faf-qp-close { background: none; border: none; cursor: pointer; font-size: 14px; color: #6c757d; padding: 2px 6px; border-radius: 4px; }
-#faf-qp-close:hover { background: #f1f3f5; color: #1a1a2e; }
-
-#faf-qp-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
-#faf-qp-field-count, #faf-qp-no-fields { font-size: 11px; color: #6c757d; text-align: center; }
-
-#faf-qp-profiles { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
-
-.faf-qp-profile {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 8px 10px; background: #f8f9fa; border: 1.5px solid #e9ecef;
-  border-radius: 8px; cursor: pointer; width: 100%; text-align: left;
-  font-size: 12px; font-weight: 500; color: #1a1a2e; transition: .15s;
+#faf-qp-logo {
+  display: flex; align-items: center; gap: 7px;
+  font-weight: 700; font-size: 12px; color: #4f46e5;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
 }
-.faf-qp-profile:hover { border-color: #4f46e5; }
-.faf-qp-profile.active { background: rgba(79,70,229,.08); border-color: #4f46e5; color: #4f46e5; }
-.faf-qp-pname { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.faf-qp-lock { font-size: 11px; }
-.faf-qp-check { color: #4f46e5; font-weight: 700; }
-
-#faf-qp-fill-btn {
-  width: 100%; padding: 9px; background: #4f46e5; color: white; border: none;
-  border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 2px;
+#faf-qp-x {
+  background: none; border: none; cursor: pointer; font-size: 13px;
+  color: #9090b0; padding: 2px 5px; border-radius: 5px;
+  font-family: -apple-system, sans-serif;
 }
-#faf-qp-fill-btn:hover { background: #4338ca; }
+#faf-qp-x:hover { background: #f0f0f8; color: #333; }
 
-/* PIN prompt */
-#faf-pin-prompt { padding: 12px 14px 14px; border-top: 1px solid #e9ecef; font-size: 12px; }
-#faf-pin-prompt p { color: #6c757d; margin-bottom: 8px; }
-#faf-pin-input {
-  width: 100%; padding: 7px 10px; border: 1.5px solid #e9ecef; border-radius: 6px;
-  font-size: 13px; outline: none; letter-spacing: 4px;
+#faf-qp-bd { padding: 11px 13px 13px; display: flex; flex-direction: column; gap: 7px; font-family: -apple-system, 'Segoe UI', sans-serif; }
+#faf-qp-fc { font-size: 11px; color: #8888aa; text-align: center; margin-bottom: 2px; }
+
+#faf-qp-pl { display: flex; flex-direction: column; gap: 5px; max-height: 190px; overflow-y: auto; }
+
+.faf-qp-p {
+  display: flex; align-items: center; gap: 9px; padding: 8px 10px;
+  background: #f7f7fd; border: 1.5px solid #e8e8f4; border-radius: 10px;
+  cursor: pointer; width: 100%; text-align: left; font-size: 12px; font-weight: 500;
+  color: #1a1a30; transition: border-color .12s, background .12s;
 }
-#faf-pin-input:focus { border-color: #4f46e5; }
-#faf-pin-cancel { padding: 6px 14px; background: none; border: 1px solid #e9ecef; border-radius: 6px; cursor: pointer; font-size: 12px; color: #6c757d; }
-#faf-pin-confirm { padding: 6px 14px; background: #4f46e5; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; color: white; font-weight: 600; }
+.faf-qp-p:hover { border-color: #7c6fcd; background: #f0effd; }
+.faf-qp-p.faf-active { background: rgba(79,70,229,.08); border-color: #4f46e5; }
+.faf-qp-av {
+  width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg,#4f46e5,#7c3aed);
+  color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.faf-qp-p.faf-active .faf-qp-av { background: linear-gradient(135deg,#4338ca,#6d28d9); }
+.faf-qp-pn { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.faf-qp-lk { font-size: 11px; }
+.faf-qp-ck { color: #4f46e5; font-size: 13px; }
+
+#faf-qp-fill {
+  width: 100%; padding: 9px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg,#4f46e5,#7c3aed); color: #fff;
+  font-size: 13px; font-weight: 650; cursor: pointer; margin-top: 2px;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+  transition: opacity .15s, transform .15s;
+}
+#faf-qp-fill:hover { opacity: .92; transform: translateY(-1px); }
+
+/* PIN */
+#faf-pin-wrap {
+  padding: 11px 13px 13px; border-top: 1px solid #ebebf5;
+  font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 12px; color: #666;
+}
+#faf-pin-wrap p { margin-bottom: 7px; }
+#faf-pin-in {
+  width: 100%; padding: 7px 10px; border: 1.5px solid #e0e0f0; border-radius: 8px;
+  font-size: 13px; letter-spacing: 5px; outline: none; background: #fff; color: #1a1a2e;
+}
+#faf-pin-in:focus { border-color: #4f46e5; }
+.faf-pin-btns { display: flex; gap: 7px; margin-top: 8px; }
+#faf-pin-cancel { flex: 1; padding: 7px; background: #f0f0f8; border: none; border-radius: 7px; cursor: pointer; font-size: 12px; color: #555; }
+#faf-pin-ok { flex: 1; padding: 7px; background: #4f46e5; border: none; border-radius: 7px; cursor: pointer; font-size: 12px; color: #fff; font-weight: 600; }
