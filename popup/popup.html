@@ -1,94 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <title>Fill-A-Form AI</title>
-  <link rel="stylesheet" href="popup.css" />
+  <link rel="stylesheet" href="popup.css"/>
 </head>
 <body>
 <div id="app">
 
-  <!-- Header -->
   <header>
     <div class="logo">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-      </svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       Fill-A-Form AI
     </div>
     <div id="active-profile-badge" class="badge hidden"></div>
   </header>
 
-  <!-- HOME VIEW -->
+  <!-- ===== HOME ===== -->
   <div id="home-view" class="view">
     <div class="stat-row">
-      <div class="stat" id="stat-fills"><span class="stat-val">–</span><span class="stat-label">Fills used</span></div>
-      <div class="stat" id="stat-profiles"><span class="stat-val">–</span><span class="stat-label">Profiles</span></div>
-      <div class="stat" id="stat-history"><span class="stat-val">–</span><span class="stat-label">History</span></div>
+      <div class="stat"><span class="stat-val" id="s-fills">–</span><span class="stat-label">Fills</span></div>
+      <div class="stat"><span class="stat-val" id="s-profiles">–</span><span class="stat-label">Profiles</span></div>
+      <div class="stat"><span class="stat-val" id="s-templates">–</span><span class="stat-label">Templates</span></div>
+      <div class="stat"><span class="stat-val" id="s-history">–</span><span class="stat-label">History</span></div>
     </div>
-    <div class="usage-bar-wrap">
+    <div class="usage-row">
       <div class="usage-bar"><div id="usage-fill"></div></div>
       <span id="usage-label"></span>
     </div>
     <button id="autofill-btn" class="primary-btn" disabled>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       Autofill This Page
     </button>
-    <div id="fields-detected" class="hint-text"></div>
+    <div id="fields-detected" class="hint"></div>
+    <div id="shortcut-hint" class="hint">Press <kbd>Ctrl+Shift+F</kbd> on any page for quick fill</div>
     <div id="home-alerts"></div>
   </div>
 
-  <!-- PROFILES VIEW -->
+  <!-- ===== PROFILES ===== -->
   <div id="profiles-view" class="view hidden">
-    <div class="view-header">
-      <h2>Profiles</h2>
-      <button id="new-profile-btn" class="ghost-btn">+ New</button>
+
+    <!-- Board manager -->
+    <div id="boards-section">
+      <div class="view-header">
+        <h2>Boards</h2>
+        <button id="new-board-btn" class="ghost-btn sm">+ Board</button>
+      </div>
+      <div id="board-list"></div>
+      <div id="board-editor" class="inline-editor hidden">
+        <input id="board-name-input" type="text" placeholder="Board name" />
+        <input id="board-color-input" type="color" value="#4f46e5" title="Board color" />
+        <button id="board-save-btn" class="ghost-btn sm">Save</button>
+        <button id="board-cancel-btn" class="ghost-btn sm">Cancel</button>
+      </div>
     </div>
 
-    <!-- Profile list -->
-    <div id="profile-list"></div>
+    <div class="section-divider"></div>
 
-    <!-- Profile editor (hidden until create/edit) -->
-    <div id="profile-editor" class="hidden">
-      <div class="editor-header">
+    <!-- Profile list -->
+    <div id="profile-section">
+      <div class="view-header">
+        <h2>Profiles</h2>
+        <button id="new-profile-btn" class="ghost-btn sm">+ Profile</button>
+      </div>
+      <div id="board-filter-row"></div>
+      <div id="profile-list"></div>
+    </div>
+
+    <!-- Profile editor (slides in) -->
+    <div id="profile-editor" class="panel-overlay hidden">
+      <div class="panel-header">
         <button id="back-to-profiles" class="icon-btn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <h3 id="editor-title">New Profile</h3>
       </div>
-      <form id="profile-form">
-        <input type="hidden" id="edit-profile-id" />
+      <form id="profile-form" class="scrollable">
+        <input type="hidden" id="edit-profile-id"/>
+        <div class="form-group"><label>Profile Name</label><input id="edit-profile-name" type="text" placeholder="Work, Personal, Travel…" required/></div>
         <div class="form-group">
-          <label>Profile Name</label>
-          <input type="text" id="edit-profile-name" placeholder="e.g. Work, Personal, Travel" required />
+          <label>Board</label>
+          <select id="edit-profile-board"><option value="">— No board —</option></select>
         </div>
+
+        <div class="form-group pin-group">
+          <label>PIN Protection</label>
+          <div id="pin-status" class="pin-status"></div>
+          <div id="pin-set-row" class="hidden">
+            <input id="pin-input" type="password" maxlength="8" placeholder="4–8 digit PIN"/>
+            <button type="button" id="pin-save-btn" class="ghost-btn sm">Set PIN</button>
+          </div>
+          <button type="button" id="pin-toggle-btn" class="ghost-btn sm">Set PIN</button>
+        </div>
+
         <div class="section-label">Personal</div>
-        <div class="form-group"><label>Full Name</label><input type="text" name="fullName" placeholder="John Doe" /></div>
+        <div class="form-group"><label>Full Name</label><input type="text" name="fullName" placeholder="John Doe"/></div>
         <div class="form-row">
-          <div class="form-group"><label>First Name</label><input type="text" name="firstName" placeholder="John" /></div>
-          <div class="form-group"><label>Last Name</label><input type="text" name="lastName" placeholder="Doe" /></div>
+          <div class="form-group"><label>First Name</label><input type="text" name="firstName" placeholder="John"/></div>
+          <div class="form-group"><label>Last Name</label><input type="text" name="lastName" placeholder="Doe"/></div>
         </div>
-        <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="john@example.com" /></div>
-        <div class="form-group"><label>Phone</label><input type="tel" name="phone" placeholder="+1 555-000-0000" /></div>
-        <div class="form-group"><label>Date of Birth</label><input type="date" name="dob" /></div>
+        <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="john@example.com"/></div>
+        <div class="form-group"><label>Phone</label><input type="tel" name="phone" placeholder="+1 555-000-0000"/></div>
+        <div class="form-group"><label>Date of Birth</label><input type="date" name="dob"/></div>
+
         <div class="section-label">Address</div>
-        <div class="form-group"><label>Address Line 1</label><input type="text" name="address1" placeholder="123 Main St" /></div>
-        <div class="form-group"><label>Address Line 2</label><input type="text" name="address2" placeholder="Apt 4B" /></div>
+        <div class="form-group"><label>Address Line 1</label><input type="text" name="address1" placeholder="123 Main St"/></div>
+        <div class="form-group"><label>Address Line 2</label><input type="text" name="address2" placeholder="Apt 4B"/></div>
         <div class="form-row">
-          <div class="form-group"><label>City</label><input type="text" name="city" placeholder="New York" /></div>
-          <div class="form-group"><label>State</label><input type="text" name="state" placeholder="NY" /></div>
+          <div class="form-group"><label>City</label><input type="text" name="city" placeholder="New York"/></div>
+          <div class="form-group"><label>State</label><input type="text" name="state" placeholder="NY"/></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>ZIP</label><input type="text" name="zip" placeholder="10001" /></div>
-          <div class="form-group"><label>Country</label><input type="text" name="country" placeholder="United States" /></div>
+          <div class="form-group"><label>ZIP</label><input type="text" name="zip" placeholder="10001"/></div>
+          <div class="form-group"><label>Country</label><input type="text" name="country" placeholder="United States"/></div>
         </div>
+
         <div class="section-label">Professional</div>
-        <div class="form-group"><label>Occupation</label><input type="text" name="occupation" placeholder="Software Engineer" /></div>
-        <div class="form-group"><label>Company</label><input type="text" name="company" placeholder="Acme Corp" /></div>
-        <div class="form-group"><label>LinkedIn</label><input type="url" name="linkedin" placeholder="https://linkedin.com/in/..." /></div>
+        <div class="form-group"><label>Occupation</label><input type="text" name="occupation" placeholder="Software Engineer"/></div>
+        <div class="form-group"><label>Company</label><input type="text" name="company" placeholder="Acme Corp"/></div>
+        <div class="form-group"><label>LinkedIn</label><input type="url" name="linkedin" placeholder="https://linkedin.com/in/…"/></div>
+
         <div class="section-label">Identity</div>
-        <div class="form-group"><label>Passport / ID Number</label><input type="text" name="passportNumber" placeholder="A12345678" /></div>
-        <div class="form-group"><label>Nationality</label><input type="text" name="nationality" placeholder="American" /></div>
+        <div class="form-group"><label>Passport / ID</label><input type="text" name="passportNumber" placeholder="A12345678"/></div>
+        <div class="form-group"><label>Nationality</label><input type="text" name="nationality" placeholder="American"/></div>
+
+        <div class="section-label">Dynamic Fields <span class="hint-inline">Pulled live from a URL</span></div>
+        <div id="dynamic-fields-list"></div>
+        <button type="button" id="add-dynamic-field-btn" class="ghost-btn full">+ Add Dynamic Field</button>
+
         <div class="btn-row">
           <button type="button" id="delete-profile-btn" class="danger-btn hidden">Delete</button>
           <button type="submit" class="primary-btn">Save Profile</button>
@@ -97,73 +136,115 @@
     </div>
   </div>
 
-  <!-- HISTORY VIEW -->
-  <div id="history-view" class="view hidden">
+  <!-- ===== TEMPLATES ===== -->
+  <div id="templates-view" class="view hidden">
     <div class="view-header">
-      <h2>Fill History</h2>
-      <button id="clear-history-btn" class="ghost-btn danger">Clear</button>
+      <h2>Templates</h2>
+      <button id="new-template-btn" class="ghost-btn sm">+ New</button>
     </div>
-    <div id="history-list"></div>
-    <div id="history-empty" class="empty-state hidden">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
-      <p>No fills recorded yet.<br/>Use autofill on any form to start tracking.</p>
+    <p class="hint" style="margin-bottom:4px">Templates match URLs and fill fields without an AI call — instant and free.</p>
+    <div id="template-list"></div>
+
+    <div id="template-editor" class="panel-overlay hidden">
+      <div class="panel-header">
+        <button id="back-to-templates" class="icon-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h3 id="tpl-editor-title">New Template</h3>
+      </div>
+      <form id="template-form" class="scrollable">
+        <input type="hidden" id="tpl-id"/>
+        <div class="form-group"><label>Template Name</label><input id="tpl-name" type="text" placeholder="e.g. US Visa Form" required/></div>
+        <div class="form-group"><label>Description</label><input id="tpl-desc" type="text" placeholder="Optional"/></div>
+        <div class="form-group">
+          <label>URL Pattern <span class="hint-inline">supports * wildcards</span></label>
+          <input id="tpl-url-pattern" type="text" placeholder="e.g. *.uscis.gov or workday.com"/>
+        </div>
+        <div class="form-group">
+          <label>Default Profile</label>
+          <select id="tpl-profile-select"><option value="">— Any active profile —</option></select>
+        </div>
+
+        <div class="section-label">Field Mappings <span class="hint-inline">Label/name → value (use {{profileField}} variables)</span></div>
+        <div id="tpl-mappings-list"></div>
+        <button type="button" id="add-mapping-btn" class="ghost-btn full">+ Add Mapping</button>
+
+        <div class="btn-row">
+          <button type="button" id="delete-template-btn" class="danger-btn hidden">Delete</button>
+          <button type="submit" class="primary-btn">Save Template</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- SETTINGS VIEW -->
+  <!-- ===== HISTORY ===== -->
+  <div id="history-view" class="view hidden">
+    <div class="view-header">
+      <h2>Fill History</h2>
+      <button id="clear-history-btn" class="ghost-btn sm danger">Clear</button>
+    </div>
+    <div id="history-list"></div>
+    <div id="history-empty" class="empty-state hidden">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+      <p>No fills yet. Use autofill on any form to start tracking.</p>
+    </div>
+  </div>
+
+  <!-- ===== SETTINGS ===== -->
   <div id="settings-view" class="view hidden">
     <h2>Settings</h2>
     <form id="settings-form">
-      <div class="section-label">AI Configuration</div>
+      <div class="section-label">AI</div>
       <div class="form-group">
         <label>Claude API Key</label>
-        <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" />
-        <small>Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></small>
+        <input type="password" id="api-key-input" placeholder="sk-ant-…" autocomplete="off"/>
+        <small>Get yours at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></small>
       </div>
-      <div class="section-label">Backend Sync (Optional)</div>
-      <div class="form-group">
-        <label>Backend URL</label>
-        <input type="url" id="backend-url-input" placeholder="https://your-api.example.com" />
+      <div class="section-label">Backup & Restore</div>
+      <div class="backup-row">
+        <button type="button" id="export-btn" class="ghost-btn full">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Backup (.faf)
+        </button>
+        <label id="import-label" class="ghost-btn full" style="cursor:pointer;text-align:center">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import Backup
+          <input type="file" id="import-input" accept=".faf,.json" style="display:none"/>
+        </label>
       </div>
-      <div class="form-group">
-        <label>Backend Token</label>
-        <input type="password" id="backend-token-input" placeholder="Your auth token" autocomplete="off" />
-      </div>
+      <div class="section-label">Backend Sync</div>
+      <div class="form-group"><label>Backend URL</label><input type="url" id="backend-url-input" placeholder="https://your-api.example.com"/></div>
+      <div class="form-group"><label>Backend Token</label><input type="password" id="backend-token-input" placeholder="Auth token" autocomplete="off"/></div>
       <button type="button" id="sync-btn" class="ghost-btn full">Sync to Backend</button>
       <div class="section-label">Behavior</div>
       <div class="form-group toggle-group">
         <label>Auto-fill on page load</label>
-        <label class="switch">
-          <input type="checkbox" id="auto-fill-toggle" />
-          <span class="slider"></span>
-        </label>
+        <label class="switch"><input type="checkbox" id="auto-fill-toggle"/><span class="slider"></span></label>
       </div>
-      <button type="submit" class="primary-btn" style="margin-top:16px">Save Settings</button>
+      <button type="submit" class="primary-btn" style="margin-top:14px">Save Settings</button>
     </form>
   </div>
 
-  <!-- NAV -->
   <nav>
     <button class="nav-btn active" data-view="home-view">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-      Home
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home
     </button>
     <button class="nav-btn" data-view="profiles-view">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Profiles
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Profiles
+    </button>
+    <button class="nav-btn" data-view="templates-view">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Templates
     </button>
     <button class="nav-btn" data-view="history-view">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
-      History
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>History
     </button>
     <button class="nav-btn" data-view="settings-view">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      Settings
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
     </button>
   </nav>
 
 </div>
 <div id="toast" class="toast hidden"></div>
-<script src="popup.js"></script>
+<script src="popup.js" type="module"></script>
 </body>
 </html>

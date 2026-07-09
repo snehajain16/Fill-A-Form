@@ -1,16 +1,26 @@
 {
   "manifest_version": 3,
   "name": "Fill-A-Form AI",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "AI-powered form autofill using your saved profile data",
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "commands"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
+  "commands": {
+    "quick-paste": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+F",
+        "mac": "Command+Shift+F"
+      },
+      "description": "Open Fill-A-Form quick paste overlay"
+    }
+  },
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
