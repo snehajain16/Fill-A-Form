@@ -218,13 +218,12 @@ async function saveTemplate(template) {
   const idx = templates.findIndex(t => t.id === entry.id);
   if (idx >= 0) templates[idx] = entry; else templates.push(entry);
   await write(KEYS.TEMPLATES, templates);
-  const { templates: updatedTemplates } = await getTemplates();
-  return { success: true, templateId: entry.id, templates: updatedTemplates };
+  return { success: true, templateId: entry.id, templates };
 }
 
 async function deleteTemplate(templateId) {
-  await write(KEYS.TEMPLATES, ((await read(KEYS.TEMPLATES)) || []).filter(t => t.id !== templateId));
-  const { templates } = await getTemplates();
+  const templates = ((await read(KEYS.TEMPLATES)) || []).filter(t => t.id !== templateId);
+  await write(KEYS.TEMPLATES, templates);
   return { success: true, templates };
 }
 
@@ -236,7 +235,7 @@ async function getSettings() {
 
 async function saveSettings(settings) {
   await write(KEYS.SETTINGS, settings);
-  return { success: true };
+  return { success: true, settings };
 }
 
 function defaultSettings() {
@@ -313,7 +312,7 @@ async function finalize(settings, profile, url, pageTitle, suggestions, totalFie
 function urlMatches(pattern, url) {
   if (!pattern) return false;
   try {
-    const re = new RegExp('^' + pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$');
+    const re = new RegExp('^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$');
     return re.test(url) || re.test(new URL(url).hostname);
   } catch { return url.includes(pattern); }
 }
@@ -453,7 +452,10 @@ async function importBackup(data) {
   })));
   await write(KEYS.PROFILES, enc);
   if (enc.length) await write(KEYS.ACTIVE, enc[0].id);
-  return { success: true, profileCount: enc.length };
+  const [{ profiles }, { boards }, { templates }, { history }] = await Promise.all([
+    getProfiles(), getBoards(), getTemplates(), getHistory(),
+  ]);
+  return { success: true, profileCount: enc.length, profiles, boards, templates, history };
 }
 
 // ===================== BACKEND SYNC =====================

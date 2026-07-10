@@ -165,7 +165,7 @@
     for (const el of inputs) {
       if (!el.offsetParent) continue;
       const label = (
-        document.querySelector(`label[for="${el.id}"]`)?.textContent ||
+        (el.id ? document.querySelector(`label[for="${CSS.escape(el.id)}"]`)?.textContent : null) ||
         el.closest('.iCIMS_InstructionWrapper')?.querySelector('label')?.textContent ||
         el.placeholder || el.name || ''
       ).toLowerCase();
@@ -197,7 +197,7 @@
     );
     for (const el of inputs) {
       if (!el.offsetParent) continue;
-      const labelEl = document.querySelector(`label[for="${el.id}"]`) || el.closest('label');
+      const labelEl = (el.id ? document.querySelector(`label[for="${CSS.escape(el.id)}"]`) : null) || el.closest('label');
       const hint = (
         (el.placeholder || '') + ' ' +
         (labelEl?.textContent || '') + ' ' +

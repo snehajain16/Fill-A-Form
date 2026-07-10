@@ -42,7 +42,7 @@ async function init() {
   state.templates = data.templates || [];
   state.history   = data.history   || [];
   state.settings  = data.settings  || {};
-  state.activeId  = data.activeId  || null;
+  state.activeId  = data.profileId || null;
   state.usage     = data.usage     || null;
 
   renderHome();
@@ -366,7 +366,7 @@ function renderTemplates() {
     <div class="card">
       <div class="card-body">
         <div class="card-title">${esc(t.name)}</div>
-        <div class="card-sub">${esc(t.urlPattern || 'Any URL')} · ${(t.mappings||[]).length} field${(t.mappings||[]).length !== 1 ? 's' : ''}</div>
+        <div class="card-sub">${esc(t.urlPattern || 'Any URL')} · ${Object.keys(t.fieldMappings||{}).length} field${Object.keys(t.fieldMappings||{}).length !== 1 ? 's' : ''}</div>
       </div>
       <button class="mini-btn edit-tpl-btn" data-id="${t.id}">Edit</button>
     </div>`).join('');
@@ -395,7 +395,7 @@ function openTemplateEditor(id) {
     $('tpl-name').value    = t.name;
     $('tpl-pattern').value = t.urlPattern || '';
     $('tpl-profile').value = t.profileId  || '';
-    (t.mappings || []).forEach(m => addMappingRow(m));
+    Object.entries(t.fieldMappings || {}).forEach(([key, value]) => addMappingRow({ key, value }));
     $('delete-template').classList.remove('hidden');
   } else {
     $('tpl-panel-title').textContent = 'New Template';
@@ -428,12 +428,13 @@ $('template-form').addEventListener('submit', async e => {
     value: row.querySelector('.map-val').value.trim(),
   })).filter(m => m.key);
 
+  const fieldMappings = Object.fromEntries(mappings.map(m => [m.key, m.value]));
   const tpl = {
-    id:         $('tpl-id').value || undefined,
-    name:       $('tpl-name').value.trim(),
-    urlPattern: $('tpl-pattern').value.trim(),
-    profileId:  $('tpl-profile').value || null,
-    mappings,
+    id:            $('tpl-id').value || undefined,
+    name:          $('tpl-name').value.trim(),
+    urlPattern:    $('tpl-pattern').value.trim(),
+    profileId:     $('tpl-profile').value || null,
+    fieldMappings,
   };
 
   const res = await send({ type: 'SAVE_TEMPLATE', template: tpl });
@@ -468,7 +469,7 @@ function renderHistory() {
     const badge = h.method === 'template'  ? '<span class="h-badge h-tpl">template</span>'
                 : h.method === 'heuristic' ? '<span class="h-badge h-heur">smart</span>'
                 : '<span class="h-badge">AI</span>';
-    const date = new Date(h.ts).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+    const date = new Date(h.timestamp).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
     return `<div class="card">
       <div class="card-body">
         <div class="card-title">${esc(h.pageTitle || h.url || 'Unknown page')}</div>
@@ -520,15 +521,15 @@ $('settings-form').addEventListener('submit', async e => {
     backendToken: $('backend-token').value.trim(),
     autoFill:     $('auto-fill-toggle').checked,
   };
-  const res = await send({ type: 'SAVE_SETTINGS', settings });
-  state.settings = res.settings;
+  await send({ type: 'SAVE_SETTINGS', settings });
+  state.settings = settings;
   toast('Settings saved');
   renderHome();
 });
 
 $('export-btn').addEventListener('click', async () => {
   const res = await send({ type: 'EXPORT_DATA' });
-  downloadJson(res.data, 'fill-a-form-backup.faf');
+  downloadJson(res.backup, 'fill-a-form-backup.faf');
   toast('Backup exported');
 });
 
@@ -538,14 +539,13 @@ $('import-in').addEventListener('change', async e => {
   try {
     const data = await readJsonFile(file);
     const res  = await send({ type: 'IMPORT_DATA', data });
-    state.profiles  = res.profiles  || state.profiles;
-    state.boards    = res.boards    || state.boards;
-    state.templates = res.templates || state.templates;
-    state.history   = res.history   || state.history;
-    state.settings  = res.settings  || state.settings;
+    state.profiles  = res.profiles;
+    state.boards    = res.boards;
+    state.templates = res.templates;
+    state.history   = res.history;
     initSettings();
     renderHome();
-    toast('Backup imported');
+    toast(`Backup imported — ${res.profileCount} profile${res.profileCount !== 1 ? 's' : ''}`);
   } catch { toast('Import failed — invalid file', 'error'); }
   e.target.value = '';
 });

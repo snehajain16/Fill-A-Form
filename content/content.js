@@ -74,6 +74,7 @@
     if (setter) setter.call(el, value); else el.value = value;
     el.dispatchEvent(new Event('input',  { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur',   { bubbles: true }));
   }
 
   function highlight(el) {
