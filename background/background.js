@@ -70,9 +70,15 @@ async function handleMessage(msg) {
     case 'AUTOFILL_REQUEST':   return handleAutofillRequest(msg);
     case 'GET_HISTORY':        return getHistory();
     case 'CLEAR_HISTORY':      return clearHistory();
-    case 'EXPORT_BACKUP':      return exportBackup();
-    case 'IMPORT_BACKUP':      return importBackup(msg.data);
-    case 'SYNC_TO_BACKEND':    return syncToBackend();
+    case 'EXPORT_BACKUP':
+    case 'EXPORT_DATA':        return exportBackup();
+    case 'IMPORT_BACKUP':
+    case 'IMPORT_DATA':        return importBackup(msg.data);
+    case 'SYNC_TO_BACKEND':
+    case 'BACKEND_SYNC':       return syncToBackend();
+    case 'HASH_PIN':           return { hash: await hashPin(msg.pin) };
+    case 'ATS_FILL':           return atsGetProfileData(msg.profileId);
+    case 'PARSE_RESUME':       return parseResume(msg.fileData, msg.mimeType, msg.apiKey);
     default: throw new Error(`Unknown message: ${msg.type}`);
   }
 }
@@ -131,14 +137,16 @@ async function saveProfile(profile) {
   if (idx >= 0) enc[idx] = entry; else enc.push(entry);
   await write(KEYS.PROFILES, enc);
   if (!(await read(KEYS.ACTIVE))) await write(KEYS.ACTIVE, entry.id);
-  return { success: true, profileId: entry.id };
+  const { profiles } = await getProfiles();
+  return { success: true, profileId: entry.id, profiles };
 }
 
 async function deleteProfile(profileId) {
   const enc = ((await read(KEYS.PROFILES)) || []).filter(p => p.id !== profileId);
   await write(KEYS.PROFILES, enc);
   if ((await read(KEYS.ACTIVE)) === profileId && enc.length) await write(KEYS.ACTIVE, enc[0].id);
-  return { success: true };
+  const { profiles } = await getProfiles();
+  return { success: true, profiles };
 }
 
 async function setProfilePin(profileId, pin) {
@@ -179,7 +187,7 @@ async function saveBoard(board) {
   const idx = boards.findIndex(b => b.id === entry.id);
   if (idx >= 0) boards[idx] = entry; else boards.push(entry);
   await write(KEYS.BOARDS, boards);
-  return { success: true, boardId: entry.id };
+  return { success: true, boardId: entry.id, boards };
 }
 
 async function deleteBoard(boardId) {
@@ -210,12 +218,14 @@ async function saveTemplate(template) {
   const idx = templates.findIndex(t => t.id === entry.id);
   if (idx >= 0) templates[idx] = entry; else templates.push(entry);
   await write(KEYS.TEMPLATES, templates);
-  return { success: true, templateId: entry.id };
+  const { templates: updatedTemplates } = await getTemplates();
+  return { success: true, templateId: entry.id, templates: updatedTemplates };
 }
 
 async function deleteTemplate(templateId) {
   await write(KEYS.TEMPLATES, ((await read(KEYS.TEMPLATES)) || []).filter(t => t.id !== templateId));
-  return { success: true };
+  const { templates } = await getTemplates();
+  return { success: true, templates };
 }
 
 // ===================== SETTINGS =====================
@@ -357,6 +367,46 @@ function parseJSON(text, fields) {
     const valid = new Set(fields.map(f => f.id));
     return Object.fromEntries(Object.entries(parsed).filter(([k]) => valid.has(k)));
   } catch { return {}; }
+}
+
+// ===================== ATS FILL =====================
+
+async function atsGetProfileData(profileId) {
+  let profile;
+  if (profileId) {
+    const { profiles } = await getProfiles();
+    profile = profiles.find(p => p.id === profileId);
+  }
+  if (!profile) ({ profile } = await getActiveProfile());
+  if (!profile) throw new Error('NO_PROFILE');
+  const data = await resolveDynamicFields(profile.data);
+  return { profileData: data };
+}
+
+// ===================== RESUME PARSER =====================
+
+async function parseResume(fileData, mimeType, apiKey) {
+  if (!apiKey) throw new Error('NO_API_KEY');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'pdfs-2024-09-25' },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'document', source: { type: 'base64', media_type: mimeType, data: fileData } },
+          { type: 'text', text: 'Extract the applicant\'s information from this resume. Return ONLY a JSON object with these fields (omit fields not found): firstName, lastName, fullName, email, phone, address1, address2, city, state, zip, country, linkedin, company, occupation, nationality. No explanation, JSON only.' },
+        ],
+      }],
+    }),
+  });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API ${res.status}`); }
+  const data = await res.json();
+  const text = data.content[0]?.text || '';
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Could not parse resume data');
+  return { parsed: JSON.parse(match[0]) };
 }
 
 // ===================== HISTORY =====================

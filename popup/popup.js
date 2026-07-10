@@ -296,6 +296,48 @@ $('delete-profile').addEventListener('click', async () => {
   renderHome();
 });
 
+// ---- RESUME PARSER ----
+$('resume-file').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const status = $('resume-status');
+  status.textContent = 'Parsing resume…';
+  status.className = 'resume-status';
+  try {
+    const apiKey = state.settings.apiKey;
+    if (!apiKey) { status.textContent = '⚠ Add your Claude API key in Settings first.'; status.className = 'resume-status error'; return; }
+    const mimeType = file.type === 'application/pdf' ? 'application/pdf' : 'text/plain';
+    const fileData = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const res = await send({ type: 'PARSE_RESUME', fileData, mimeType, apiKey });
+    if (res.error) throw new Error(res.error);
+    const parsed = res.parsed;
+    const form = $('profile-form');
+    let filled = 0;
+    form.querySelectorAll('[name]').forEach(inp => {
+      if (parsed[inp.name] !== undefined && parsed[inp.name] !== '') {
+        inp.value = parsed[inp.name];
+        filled++;
+      }
+    });
+    // pre-fill name from resume if not set
+    if (!$('edit-name').value && (parsed.fullName || parsed.firstName)) {
+      $('edit-name').value = parsed.fullName || [parsed.firstName, parsed.lastName].filter(Boolean).join(' ');
+    }
+    status.textContent = `✓ Filled ${filled} fields from resume`;
+    status.className = 'resume-status success';
+  } catch (err) {
+    status.textContent = '✗ ' + (err.message === 'NO_API_KEY' ? 'Add API key in Settings first' : err.message);
+    status.className = 'resume-status error';
+  }
+  e.target.value = '';
+  $('resume-status').classList.remove('hidden');
+});
+
 $('add-dynamic').addEventListener('click', () => addDynamicRow());
 function addDynamicRow(f = {}) {
   const row = document.createElement('div');

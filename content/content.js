@@ -3,6 +3,9 @@
   let quickPasteOverlay = null;
   let fillButton = null;
 
+  // detect ATS platform once on load (window.FAF_ATS injected by ats.js before this script)
+  const atsPlatform = window.FAF_ATS?.detect() || null;
+
   // ---- cached field scan (invalidated on DOM mutation) ----
   let cachedFields = null;
   let mutationTimer = null;
@@ -105,6 +108,26 @@
     isProcessing = true;
     const fields = getFields();
     if (!fields.length) { notify('No fillable fields found.', 'error'); isProcessing = false; return; }
+
+    // ATS-aware path: skip the generic field scan and use platform-specific fill
+    if (atsPlatform && window.FAF_ATS) {
+      notify('Filling form…', 'info');
+      try {
+        const res = await chrome.runtime.sendMessage({ type: 'ATS_FILL', profileId: profileId || null });
+        if (res.error) {
+          const msgs = { NO_PROFILE: 'Set up a profile first.' };
+          notify(msgs[res.error] || res.error, 'error');
+          return;
+        }
+        const filled = await window.FAF_ATS.fill(atsPlatform, res.profileData);
+        const label = window.FAF_ATS.PLATFORM_LABELS[atsPlatform] || atsPlatform;
+        notify(`Filled ${filled} field${filled!==1?'s':''} on ${label}!`);
+        closeQuickPaste();
+      } catch { notify('Something went wrong. Please try again.', 'error'); }
+      finally { isProcessing = false; }
+      return;
+    }
+
     notify('Filling form…', 'info');
     try {
       const res = await chrome.runtime.sendMessage({
@@ -145,7 +168,7 @@
         <button id="faf-qp-x">✕</button>
       </div>
       <div id="faf-qp-bd">
-        <p id="faf-qp-fc">${fieldCount > 0 ? `${fieldCount} field${fieldCount!==1?'s':''} detected` : 'No fillable fields on this page'}</p>
+        <p id="faf-qp-fc">${atsPlatform ? `<span style="font-size:10px;background:#4f46e5;color:#fff;border-radius:4px;padding:1px 6px;margin-right:6px">${window.FAF_ATS.PLATFORM_LABELS[atsPlatform]||atsPlatform}</span>` : ''}${fieldCount > 0 ? `${fieldCount} field${fieldCount!==1?'s':''} detected` : 'No fillable fields on this page'}</p>
         <div id="faf-qp-pl">${(profiles||[]).map(p=>`
           <button class="faf-qp-p${p.id===activeId?' faf-active':''}" data-id="${p.id}" data-pin="${p.hasPin?'1':'0'}">
             <span class="faf-qp-av">${escHtml(p.name[0]||'?')}</span>
